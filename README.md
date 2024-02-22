@@ -1,7 +1,6 @@
 # TMotor C++ SocketCAN Library
 
-The purpose of this header-only motors library is to accommodate a version of the Python TMotorCAN in C++ such that research & development can be sped up by allowing for finer integration in existing control.
-Feel free to make pull requests to the repository.
+The purpose of this header-only motors library is to accommodate an analogy of the Python TMotorCAN in C++ such that research & development can be sped by giving more freedom to new-coming developers that want to get right into working with these motors in C++.
 
 ## How to Run
 
