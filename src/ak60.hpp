@@ -50,7 +50,7 @@ enum MotorFault {
   UNDERVOLTAGE,
   ENCODER,
   HARDWARE
-}
+};
 
 /**
  * @brief AK60 Motor CAN Interface
@@ -70,20 +70,6 @@ protected:
   std::thread _can_writer;
   std::thread _can_reader;
 
-  void _setPosition() {
-    struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::POSITION;
-    int32_t pos_cmd_int = (int32_t) (cmd_angle * 10000.0f);
-    wframe.data[0] = (pos_cmd_int >> 24) & 0xFF;
-    wframe.data[1] = (pos_cmd_int >> 16) & 0xFF;
-    wframe.data[2] = (pos_cmd_int >> 8) & 0xFF;
-    wframe.data[3] = pos_cmd_int & 0xFF;
-    wframe.can_dlc = 4;
-    int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
-    if (nbytes < 0) {
-      perror("Error while writing to socket");
-    }
-  }
 
   void read_motor_message() {
     struct can_frame rframe;
@@ -156,33 +142,10 @@ public:
     rfilter.can_mask = CAN_SFF_MASK;
     setsockopt(_can_fd, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(struct can_filter));
 
-    _can_writer = std::thread([this] {
-      while (!_shutdown) {
-        switch (_motor_mode)
-        {
-        case MotorMode::DUTY:
-          continue;
-        case MotorMode::CURRENTLOOP:
-          continue;
-        case MotorMode::CURRENTBREAK:
-          continue;
-        case MotorMode::VELOCITY:
-          continue;
-        case MotorMode::POSITION:
-          _setPosition();
-          continue;
-        default:
-          continue;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-    });
-    _can_writer.detach();
-
     _can_reader = std::thread([this] {
       while (!_shutdown) {
         read_motor_message();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1.0f/400.0f));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
       }
     });
     _can_reader.detach();
@@ -206,6 +169,22 @@ public:
   MotorFault getFault() {
     return _motor_fault;
   }
+  
+  void setPosition(float position) {
+    struct can_frame wframe;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::POSITION;
+    int32_t pos_cmd_int = (int32_t) (position * 10000.0f);
+    wframe.data[0] = (pos_cmd_int >> 24) & 0xFF;
+    wframe.data[1] = (pos_cmd_int >> 16) & 0xFF;
+    wframe.data[2] = (pos_cmd_int >> 8) & 0xFF;
+    wframe.data[3] = pos_cmd_int & 0xFF;
+    wframe.can_dlc = 4;
+    int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
+    if (nbytes < 0) {
+      perror("Error while writing to socket");
+    }
+  }
+
 };
 
 } // namespace TMotor
