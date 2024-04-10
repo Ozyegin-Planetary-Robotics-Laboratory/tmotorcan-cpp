@@ -21,6 +21,7 @@
 #include <sys/ioctl.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
+#include <iostream>
 #include <vector>
 #include <thread>
 #include <chrono>
@@ -32,7 +33,7 @@ const uint8_t enterMotorControlMsg[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF
 const uint8_t exitMotorControlMsg[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
 const uint8_t zeroMotorControlMSG[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE};
 
-enum MotorMode {
+enum MotorModeID {
   DUTY = 0x00000000,
   CURRENTLOOP = 0x00000100,
   CURRENTBREAK = 0x00000200,
@@ -52,6 +53,27 @@ enum MotorFault {
   HARDWARE
 };
 
+std::string fault_to_string(MotorFault &fault) {
+  switch (fault) {
+    case MotorFault::NONE:
+      return std::string("None");
+    case MotorFault::OVERTEMPERATURE:
+      return std::string("Overtemperature");
+    case MotorFault::OVERCURRENT:
+      return std::string("Overcurrent");
+    case MotorFault::OVERVOLTAGE:
+      return std::string("Overvoltage");
+    case MotorFault::UNDERVOLTAGE:
+      return std::string("Undervoltage");
+    case MotorFault::ENCODER:
+      return std::string("Encoder");
+    case MotorFault::HARDWARE:
+      return std::string("Hardware");
+    default:
+      return std::string("INVALID FAULT");
+  }
+}
+
 enum MotorOriginMode {
   TEMPORARY = 0x00000000,
   PERMANENT = 0x00000001,
@@ -69,18 +91,14 @@ protected:
   int _can_fd;
   bool _shutdown;
   uint8_t _motor_id;
-  MotorMode _motor_mode;
-  MotorFault _motor_fault;
 
-  int64_t _command_period; //ms
-  std::thread _can_writer;
   std::thread _can_reader;
 
   void __read_motor_message() {
     struct can_frame rframe;
     int nbytes = read(_can_fd, &rframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while reading from socket");
+      throw std::runtime_error("Error while reading from socket");
     }
     if (nbytes < sizeof(struct can_frame)) {
       return;
@@ -90,15 +108,15 @@ protected:
     velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3])) * 10.0f;
     current = ((int16_t) (rframe.data[4] << 8 | rframe.data[5])) * 0.01f;
     temperature = rframe.data[6];
-    _motor_fault = (MotorFault) rframe.data[7];
+    motor_fault = (MotorFault) rframe.data[7];
   }
 
 public:
-  float cmd_angle;
-  float current;      // A   [-60, 60]
-  float velocity;     // rpm [-320000, 320000] 
-  float position;     // deg [-3200, 3200]
-  int8_t temperature; // C   [-20, 127]
+  float current;            // A   [-60, 60]
+  float velocity;           // rpm [-320000, 320000] 
+  float position;           // deg [-3200, 3200]
+  int8_t temperature;       // C   [-20, 127]
+  MotorFault motor_fault;   // motor fault type
 
   /**
    * @class AK60Manager
@@ -108,18 +126,34 @@ public:
    * using the CAN interface. It allows setting the motor mode, position,
    * and reading motor messages.
    */
-  AK60Manager(const uint8_t motor_id, const char *can_interface) :
+  AK60Manager(const uint8_t motor_id) :
+    _can_fd(-1),
     _shutdown(false),
-    _motor_mode(MotorMode::POSITION),
-    cmd_angle(0.0)
+    _motor_id(motor_id),
+    current(0.0f),
+    velocity(0.0f),
+    position(0.0f),
+    temperature(0),
+    motor_fault(MotorFault::NONE)
   {
-    _motor_id = motor_id;
+    return;
+  }
 
+  /**
+   * @brief Destructor for the AK60Manager class.
+   *
+   * This destructor sets the _shutdown flag to true and closes the _can_fd file descriptor.
+   */
+  ~AK60Manager() {
+    _shutdown = true;
+    close(_can_fd);
+  }
+
+  void connect(const char *can_interface) {
     /* create socket file descriptor */
-    _can_fd = -1;
     while (_can_fd < 0) {
       if ((_can_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-        perror("Error while opening socket");
+        throw std::runtime_error("Error while creating the socket.");
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
@@ -136,7 +170,7 @@ public:
     int bind = -1;
     while (bind < 0) {
       if ((bind = ::bind(_can_fd, (struct sockaddr *)&addr, sizeof(addr))) < 0) {
-        perror("Error in socket bind");
+        throw std::runtime_error("Error while binding the socket.");
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
@@ -157,35 +191,19 @@ public:
   }
 
   /**
-   * @brief Destructor for the AK60Manager class.
-   *
-   * This destructor sets the _shutdown flag to true and closes the _can_fd file descriptor.
-   */
-  ~AK60Manager() {
-    _shutdown = true;
-    close(_can_fd);
-  }
-
-  /**
-   * @brief Get the current motor fault.
-   *
-   * @return MotorFault The current motor fault.
-   */
-  MotorFault getFault() {
-    return _motor_fault;
-  }
-
-  /**
    * @warning This function is not tested with.
   */
   void setOrigin(MotorOriginMode mode) {
+    if (_can_fd < 0) {
+      return;
+    }
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::SETORIGIN;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::SETORIGIN;
     wframe.data[0] = mode;
     wframe.can_dlc = 1;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket");
     }
   }
   
@@ -195,8 +213,11 @@ public:
    * @param duty The duty cycle to apply to the motor. (Unit unknown, assumed to be between -100 and 100)
   */
   void sendDutyCycle(float duty) {
+    if (_can_fd < 0) {
+      return;
+    }
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::DUTY;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::DUTY;
     int32_t duty_cmd_int = (int32_t) (duty * 100000.0f);
     wframe.data[0] = duty_cmd_int & 0xFF;
     wframe.data[1] = (duty_cmd_int >> 8) & 0xFF;
@@ -205,7 +226,7 @@ public:
     wframe.can_dlc = 4;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket.");
     }
   }
   
@@ -217,12 +238,15 @@ public:
    * @note The torque applied is equal to the current multiplied by the torque constant of the motor, which is 1/kv.
   */
   void sendCurrent(float current) {
+    if (_can_fd < 0) {
+      return;
+    }
     float current_max = 60.0;
     float current_min = -60.0;
     if (current > current_max) current = current_max;
     if (current < current_min) current = current_min;
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::CURRENTLOOP;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::CURRENTLOOP;
     int32_t current_cmd_int = (int32_t) (current * 100.0f);
     wframe.data[0] = current_cmd_int & 0xFF;
     wframe.data[1] = (current_cmd_int >> 8) & 0xFF;
@@ -231,7 +255,7 @@ public:
     wframe.can_dlc = 4;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket");
     }
   }
 
@@ -243,12 +267,15 @@ public:
    * @brief Stops the motor at the current position, it will try to resist movement with up to the specified current.
   */
   void sendCurrentBrake(float current) {
+    if (_can_fd < 0) {
+      return;
+    }
     float current_max = 60.0;
     float current_min = 0.0;
     if (current > current_max) current = current_max;
     if (current < current_min) current = current_min;
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::CURRENTBREAK;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::CURRENTBREAK;
     int32_t current_cmd_int = (int32_t) (current * 1000.0f);
     wframe.data[0] = current_cmd_int & 0xFF;
     wframe.data[1] = (current_cmd_int >> 8) & 0xFF;
@@ -257,7 +284,7 @@ public:
     wframe.can_dlc = 4;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket");
     }
   }
 
@@ -267,8 +294,11 @@ public:
    * @warning The velocity unit is assumed to be RPM, however, it is not clear.
   */
   void sendVelocity(int32_t velocity) {
+    if (_can_fd < 0) {
+      return;
+    }
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::VELOCITY;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::VELOCITY;
     int32_t vel_cmd_int = velocity;
     wframe.data[0] = vel_cmd_int & 0xFF;
     wframe.data[1] = (vel_cmd_int >> 8) & 0xFF;
@@ -277,7 +307,7 @@ public:
     wframe.can_dlc = 4;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket");
     }
   }
 
@@ -285,10 +315,17 @@ public:
    * @brief Brings the motor to the specified position.
    * 
    * @param pose The position to bring the motor to. (Unit unknown)
+   * 
+   * @note The input is between -36000 and 36000.
   */
   void sendPosition(float pose) {
+    if (_can_fd < 0) {
+      return;
+    }
+    pose = pose > 36000.0f ? 36000.0f : pose;
+    pose = pose < -36000.0f ? -36000.0f : pose;
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::POSITION;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::POSITION;
     int32_t pos_cmd_int = (int32_t) (pose * 10000.0f);
     wframe.data[0] = (pos_cmd_int >> 24) & 0xFF;
     wframe.data[1] = (pos_cmd_int >> 16) & 0xFF;
@@ -297,7 +334,7 @@ public:
     wframe.can_dlc = 4;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket");
     }
   }
 
@@ -313,12 +350,15 @@ public:
    * @param acc The acceleration to move the motor with. (Unit unknown)
   */
   void sendPositionVelocity(float pose, int16_t vel, int16_t acc) {
+    if (_can_fd < 0) {
+      return;
+    }
     int16_t acc_max = 200;
     int16_t acc_min = 0;
     if (acc > acc_max) acc = acc_max;
     if (acc < acc_min) acc = acc_min;
     struct can_frame wframe;
-    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorMode::POSITIONVELOCITY;
+    wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::POSITIONVELOCITY;
     int32_t pos_cmd_int = (int32_t) (pose * 10000.0f);
     int16_t vel_cmd_int = vel;
     int16_t acc_cmd_int = acc;
@@ -333,7 +373,7 @@ public:
     wframe.can_dlc = 8;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
-      perror("Error while writing to socket");
+      throw std::runtime_error("Error while writing to the socket");
     }
   }
 

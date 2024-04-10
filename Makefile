@@ -3,15 +3,18 @@ CFLAGS = -o bin/main
 LIBS = -lpthread -lncurses
 SRC_DIR = src
 BIN_DIR = bin
+INC_DIR = include
 
-
-$(BIN_DIR)/main: $(SRC_DIR)/client.cpp $(SRC_DIR)/ak60.hpp
-	$(CC) $(CFLAGS) $(SRC_DIR)/client.cpp $(SRC_DIR)/ak60.hpp $(LIBS)
+$(BIN_DIR)/%: $(SRC_DIR)/%.cpp
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 all: $(BIN_DIR)/main
 
-test: $(BIN_DIR)/main
+run: clean $(BIN_DIR)/main
 	./$(BIN_DIR)/main
+
+test: clean $(BIN_DIR)/unit
+	./$(BIN_DIR)/unit
 
 setup_can:
 	ip link set can0 txqueuelen 1000
@@ -24,6 +27,6 @@ setup_vcan:
 	ip link set up vcan0
 
 clean:
-	rm bin/*
+	rm -f bin/*
 
-.PHONY: all test setup_can setup_vcan clean
+.PHONY: all run test setup_can setup_vcan clean
