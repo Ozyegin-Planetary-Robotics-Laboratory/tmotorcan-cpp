@@ -351,8 +351,41 @@ struct PositionVelocityController : public Controller {
 };
 
 struct SetOriginController : public Controller {
+private:
+  int _activated_field;
+  int _cursor_position;
+  enum ButtonState : uint8_t {
+    NORMAL,
+    ACTIVE,
+    SELECTED
+  };
+  ButtonState _button_states[4] = {
+    SELECTED,
+    NORMAL,
+    NORMAL,
+    NORMAL
+  };
+  const char *_button_labels[4] = {
+    "Temporary",
+    "Permanent",
+    "Restore",
+    "Delegate"
+  };
+
+  void __update_buttons() {
+    for (int i = 0; i < 4; i++) {
+      int color = static_cast<int> (_button_states[i]);
+      wattron(win, A_NORMAL | COLOR_PAIR(color) | A_BOLD);
+      mvwprintw(win, h/3+i + i/3, 2, _button_labels[i]);
+      wattroff(win, A_NORMAL | COLOR_PAIR(color) | A_BOLD);
+    }
+  }
+
+public:
   SetOriginController(int h, int w, int y, int x, TMotor::AK60Manager *ak60handle):
-    Controller(h, w, y, x, SETORIGIN, ak60handle)
+    Controller(h, w, y, x, SETORIGIN, ak60handle),
+    _activated_field(-1),
+    _cursor_position(0)
   {
     return;
   }
@@ -362,9 +395,73 @@ struct SetOriginController : public Controller {
     mounted = true;
     wbkgd(win, A_NORMAL | COLOR_PAIR(3));
     wclear(win);
+    mvwprintw(win, 1, (w-11)/2, "Set Origin");
+    __update_buttons();
     box(win, 0, 0);
     wrefresh(win);
     return;
+  }
+
+  void update(UpdatePacket *data) override {
+    int key = static_cast<KeyInput *> (data)->key_in;
+    switch (key) {
+      case KEY_RIGHT:
+        if (_button_states[_cursor_position] == SELECTED) {
+          _button_states[_cursor_position] = NORMAL;
+        }
+        if (_cursor_position < 3) {
+          _cursor_position++;
+        } else {
+          _cursor_position = 0;
+        }
+        if (_button_states[_cursor_position] == NORMAL) {
+          _button_states[_cursor_position] = SELECTED;
+        }
+        break;
+      case KEY_LEFT:
+        if (_button_states[_cursor_position] == SELECTED) {
+          _button_states[_cursor_position] = NORMAL;
+        }
+        if (_cursor_position > 0) {
+          _cursor_position--;
+        } else {
+          _cursor_position = 3;
+        }
+        if (_button_states[_cursor_position] == NORMAL) {
+          _button_states[_cursor_position] = SELECTED;
+        } 
+        break;
+      case '\n':
+        if (_cursor_position != 3) {
+          if (_activated_field == -1) {
+            _activated_field = _cursor_position;
+            _button_states[_cursor_position] = ACTIVE;
+          } else {
+            if (_button_states[_cursor_position] == ACTIVE) {
+              _button_states[_activated_field] = SELECTED;
+              _activated_field = -1;
+            } else {
+              _button_states[_activated_field] = NORMAL;
+              _activated_field = _cursor_position;
+              _button_states[_cursor_position] = ACTIVE;
+            }
+          }
+        } else {
+          if (_activated_field != -1) {
+            ak60handle->setOrigin(static_cast<TMotor::MotorOriginMode> (_activated_field));
+            _button_states[3] = ACTIVE;
+            __update_buttons();
+            wrefresh(win);
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            _button_states[3] = SELECTED;
+            __update_buttons();
+            wrefresh(win);
+          }
+        }
+        break;
+    }
+    __update_buttons();
+    wrefresh(win);
   }
 
   void unmount() override {
@@ -372,6 +469,14 @@ struct SetOriginController : public Controller {
     wborder(win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     werase(win);
     wrefresh(win);
+  }
+
+  void select() override {
+    
+  }
+
+  void deselect() override {
+
   }
 
 };
