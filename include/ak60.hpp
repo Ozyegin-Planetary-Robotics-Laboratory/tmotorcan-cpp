@@ -104,8 +104,8 @@ protected:
       return;
     }
 
-    position = ((int16_t) (rframe.data[0] << 8 | rframe.data[1])) * 0.1f;
-    velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3])) * 10.0f;
+    position = ((int16_t) (rframe.data[0] << 8 | rframe.data[1])) * 0.1f / gear_ratio;
+    velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3])) * 10.0f / gear_ratio;
     current = ((int16_t) (rframe.data[4] << 8 | rframe.data[5])) * 0.01f;
     temperature = rframe.data[6];
     motor_fault = (MotorFault) rframe.data[7];
@@ -115,6 +115,7 @@ public:
   float current;            // A   [-60, 60]
   float velocity;           // rpm [-320000, 320000] 
   float position;           // deg [-3200, 3200]
+  float gear_ratio;         // gear ratio
   int8_t temperature;       // C   [-20, 127]
   MotorFault motor_fault;   // motor fault type
 
@@ -126,13 +127,14 @@ public:
    * using the CAN interface. It allows setting the motor mode, position,
    * and reading motor messages.
    */
-  AK60Manager(const uint8_t motor_id) :
+  AK60Manager(const uint8_t motor_id, double gear_ratio_in = 1.0f) :
     _can_fd(-1),
     _shutdown(false),
     _motor_id(motor_id),
     current(0.0f),
     velocity(0.0f),
     position(0.0f),
+    gear_ratio(gear_ratio_in),
     temperature(0),
     motor_fault(MotorFault::NONE)
   {
@@ -299,7 +301,7 @@ public:
     }
     struct can_frame wframe;
     wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::VELOCITY;
-    int32_t vel_cmd_int = velocity;
+    int32_t vel_cmd_int = velocity * gear_ratio;
     wframe.data[0] = vel_cmd_int & 0xFF;
     wframe.data[1] = (vel_cmd_int >> 8) & 0xFF;
     wframe.data[2] = (vel_cmd_int >> 16) & 0xFF;
@@ -322,6 +324,7 @@ public:
     if (_can_fd < 0) {
       return;
     }
+    pose = pose * gear_ratio;
     pose = pose > 36000.0f ? 36000.0f : pose;
     pose = pose < -36000.0f ? -36000.0f : pose;
     struct can_frame wframe;
@@ -359,9 +362,9 @@ public:
     if (acc < acc_min) acc = acc_min;
     struct can_frame wframe;
     wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::POSITIONVELOCITY;
-    int32_t pos_cmd_int = (int32_t) (pose * 10000.0f);
-    int16_t vel_cmd_int = vel;
-    int16_t acc_cmd_int = acc;
+    int32_t pos_cmd_int = (int32_t) (pose * gear_ratio * 10000.0f);
+    int16_t vel_cmd_int = vel * gear_ratio;
+    int16_t acc_cmd_int = acc * gear_ratio;
     wframe.data[0] = (pos_cmd_int >> 24) & 0xFF;
     wframe.data[1] = (pos_cmd_int >> 16) & 0xFF;
     wframe.data[2] = (pos_cmd_int >> 8) & 0xFF;

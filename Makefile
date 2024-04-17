@@ -11,7 +11,7 @@ $(BIN_DIR)/%: $(SRC_DIR)/%.cpp
 all: $(BIN_DIR)/main
 
 run: clean $(BIN_DIR)/main
-	./$(BIN_DIR)/main
+	./$(BIN_DIR)/main 29.5
 
 test: clean $(BIN_DIR)/unit
 	./$(BIN_DIR)/unit

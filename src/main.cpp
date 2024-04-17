@@ -13,7 +13,24 @@ void cleanup() {
   endwin();
 }
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <gear_ratio>" << std::endl;
+    return 1;
+  }
+  std::string gear_ratio_string = argv[1];
+  float gear_ratio_value;
+  try {
+    gear_ratio_value = std::stof(gear_ratio_string);
+  } catch (const std::exception& e) {
+    std::cerr << "Invalid gear ratio: " << gear_ratio_string << std::endl;
+    return 1;
+  }
+
+  std::cout << "Starting TMotorCAN Client" << std::endl;
+  std::cout << "Gear Ratio: " << gear_ratio_value << " " << gear_ratio_string << std::endl;
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
   initscr();
   keypad(stdscr, TRUE);
   raw();
@@ -37,9 +54,9 @@ int main() {
   entryMenu.unmount();
 
   int id = entryMenu.motor_id;
-  TMotor::AK60Manager ak60(id);
+  TMotor::AK60Manager ak60(id, gear_ratio_value);
   try {
-    ak60.connect("vcan0");
+    ak60.connect("can0");
   }
   catch(const std::exception& e)
   { 
@@ -84,6 +101,7 @@ int main() {
     {POSITIONVELOCITY, std::make_shared<PositionVelocityController> (12, COLS/8, 5, COLS*6/8, &ak60)},
     {SETORIGIN,        std::make_shared<SetOriginController>        (12, COLS/8, 5, COLS*7/8, &ak60)}
   };
+  mvprintw(LINES-1, 0, "Gear Ratio: %f", gear_ratio_value);
 
   while (key != 'q') {
     key = getch();
