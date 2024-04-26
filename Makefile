@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -o bin/main
+CFLAGS = -o bin/main -g
 LIBS = -lpthread -lncurses
 SRC_DIR = src
 BIN_DIR = bin
