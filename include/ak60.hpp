@@ -103,9 +103,12 @@ protected:
     if (nbytes < sizeof(struct can_frame)) {
       return;
     }
+    if (rframe.can_dlc != 8) {
+      return;
+    }
 
     position = ((int16_t) (rframe.data[0] << 8 | rframe.data[1])) * 0.1f / gear_ratio;
-    velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3])) * 10.0f / gear_ratio;
+    velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3])) / gear_ratio;
     current = ((int16_t) (rframe.data[4] << 8 | rframe.data[5])) * 0.01f;
     temperature = rframe.data[6];
     motor_fault = (MotorFault) rframe.data[7];
@@ -127,7 +130,7 @@ public:
    * using the CAN interface. It allows setting the motor mode, position,
    * and reading motor messages.
    */
-  AK60Manager(const uint8_t motor_id, double gear_ratio_in = 1.0f) :
+  AK60Manager(const uint8_t motor_id, float gear_ratio_in) :
     _can_fd(-1),
     _shutdown(false),
     _motor_id(motor_id),
@@ -149,6 +152,15 @@ public:
   ~AK60Manager() {
     _shutdown = true;
     close(_can_fd);
+  }
+
+  /**
+   * @brief Get the motor ID.
+   * 
+   * @return The motor ID.
+  */
+  uint8_t getMotorID() {
+    return _motor_id;
   }
 
   void connect(const char *can_interface) {
