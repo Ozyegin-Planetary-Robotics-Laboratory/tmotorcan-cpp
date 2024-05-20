@@ -25,6 +25,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <mutex>
 
 namespace TMotor
 {
@@ -41,6 +42,12 @@ enum MotorModeID {
   POSITION = 0x00000400,
   SETORIGIN = 0x00000500,
   POSITIONVELOCITY = 0x00000600
+};
+
+enum MotorOriginMode {
+  TEMPORARY = 0x00000000,
+  PERMANENT = 0x00000001,
+  RESTORE = 0x00000002
 };
 
 enum MotorFault {
@@ -74,11 +81,6 @@ std::string fault_to_string(MotorFault &fault) {
   }
 }
 
-enum MotorOriginMode {
-  TEMPORARY = 0x00000000,
-  PERMANENT = 0x00000001,
-  RESTORE = 0x00000002
-};
 
 /**
  * @brief AK60 Motor CAN Interface
@@ -91,7 +93,12 @@ protected:
   int _can_fd;
   bool _shutdown;
   uint8_t _motor_id;
-
+  float _current;            // A   [-60, 60]
+  float _velocity;           // rpm [-320000, 320000] 
+  float _position;           // deg [-3200, 3200]
+  int8_t _temperature;       // C   [-20, 127]
+  MotorFault _motor_fault;   // motor fault type
+  std::mutex _mutex;
   std::thread _can_reader;
 
   void __read_motor_message() {
@@ -107,20 +114,15 @@ protected:
       return;
     }
 
-    position = ((int16_t) (rframe.data[0] << 8 | rframe.data[1])) * 0.1f / gear_ratio;
-    velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3])) / gear_ratio;
-    current = ((int16_t) (rframe.data[4] << 8 | rframe.data[5])) * 0.01f;
-    temperature = rframe.data[6];
-    motor_fault = (MotorFault) rframe.data[7];
+    std::lock_guard<std::mutex> lock(_mutex);
+    _position = ((int16_t) (rframe.data[0] << 8 | rframe.data[1])) * 0.1f;
+    _velocity = ((int16_t) (rframe.data[2] << 8 | rframe.data[3]));
+    _current = ((int16_t) (rframe.data[4] << 8 | rframe.data[5])) * 0.01f;
+    _temperature = rframe.data[6];
+    _motor_fault = (MotorFault) rframe.data[7];
   }
 
 public:
-  float current;            // A   [-60, 60]
-  float velocity;           // rpm [-320000, 320000] 
-  float position;           // deg [-3200, 3200]
-  float gear_ratio;         // gear ratio
-  int8_t temperature;       // C   [-20, 127]
-  MotorFault motor_fault;   // motor fault type
 
   /**
    * @class AK60Manager
@@ -130,16 +132,15 @@ public:
    * using the CAN interface. It allows setting the motor mode, position,
    * and reading motor messages.
    */
-  AK60Manager(const uint8_t motor_id, float gear_ratio_in) :
+  AK60Manager(const uint8_t motor_id) :
     _can_fd(-1),
     _shutdown(false),
     _motor_id(motor_id),
-    current(0.0f),
-    velocity(0.0f),
-    position(0.0f),
-    gear_ratio(gear_ratio_in),
-    temperature(0),
-    motor_fault(MotorFault::NONE)
+    _current(0.0f),
+    _velocity(0.0f),
+    _position(0.0f),
+    _temperature(0),
+    _motor_fault(MotorFault::NONE)
   {
     return;
   }
@@ -161,6 +162,56 @@ public:
   */
   uint8_t getMotorID() {
     return _motor_id;
+  }
+
+  /**
+   * @brief Get the motor current.
+   * 
+   * @return The motor current.
+  */
+  float getCurrent() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _current;
+  }
+
+  /**
+   * @brief Get the motor velocity.
+   * 
+   * @return The motor velocity.
+  */
+  float getVelocity() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _velocity;
+  }
+
+  /**
+   * @brief Get the motor position.
+   * 
+   * @return The motor position.
+  */
+  float getPosition() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _position;
+  }
+
+  /**
+   * @brief Get the motor temperature.
+   * 
+   * @return The motor temperature.
+  */
+  int8_t getTemperature() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _temperature;
+  }
+
+  /**
+   * @brief Get the motor fault.
+   * 
+   * @return The motor fault.
+  */
+  MotorFault getFault() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _motor_fault;
   }
 
   void connect(const char *can_interface) {
@@ -313,7 +364,7 @@ public:
     }
     struct can_frame wframe;
     wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::VELOCITY;
-    int32_t vel_cmd_int = velocity * gear_ratio;
+    int32_t vel_cmd_int = velocity;
     wframe.data[0] = vel_cmd_int & 0xFF;
     wframe.data[1] = (vel_cmd_int >> 8) & 0xFF;
     wframe.data[2] = (vel_cmd_int >> 16) & 0xFF;
@@ -328,7 +379,7 @@ public:
   /**
    * @brief Brings the motor to the specified position.
    * 
-   * @param pose The position to bring the motor to. (Unit unknown)
+   * @param pose The position to bring the motor to. (degrees)
    * 
    * @note The input is between -36000 and 36000.
   */
@@ -336,7 +387,6 @@ public:
     if (_can_fd < 0) {
       return;
     }
-    pose = pose * gear_ratio;
     pose = pose > 36000.0f ? 36000.0f : pose;
     pose = pose < -36000.0f ? -36000.0f : pose;
     struct can_frame wframe;
@@ -358,13 +408,13 @@ public:
    * 
    * @brief Brings the motor to the specified position with the specified velocity and acceleration.
    * 
-   * @param pose The position to bring the motor to. (Unit unknown)
+   * @param pose The position to bring the motor to. (degrees)
    * 
-   * @param vel The velocity to move the motor with. (Unit unknown)
+   * @param vel The velocity to move the motor with. (degrees/second)
    * 
-   * @param acc The acceleration to move the motor with. (Unit unknown)
+   * @param acc The acceleration to move the motor with. (degrees/second^2)
   */
-  void sendPositionVelocity(float pose, int16_t vel, int16_t acc) {
+  void sendPositionVelocityAcceleration(float pose, int16_t vel, int16_t acc) {
     if (_can_fd < 0) {
       return;
     }
@@ -374,9 +424,9 @@ public:
     if (acc < acc_min) acc = acc_min;
     struct can_frame wframe;
     wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::POSITIONVELOCITY;
-    int32_t pos_cmd_int = (int32_t) (pose * gear_ratio * 10000.0f);
-    int16_t vel_cmd_int = vel * gear_ratio;
-    int16_t acc_cmd_int = acc * gear_ratio;
+    int32_t pos_cmd_int = (int32_t) (pose * 10000.0f);
+    int16_t vel_cmd_int = vel;
+    int16_t acc_cmd_int = acc;
     wframe.data[0] = (pos_cmd_int >> 24) & 0xFF;
     wframe.data[1] = (pos_cmd_int >> 16) & 0xFF;
     wframe.data[2] = (pos_cmd_int >> 8) & 0xFF;

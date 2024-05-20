@@ -14,6 +14,7 @@ class Menu : public Component {
   bool *m_shutdown_ptr;
   bool m_locked;
   std::thread m_command_thread;
+  float m_gear_ratio;
   
   ComponentPtr _get_curs_button() {
     return m_buttons[m_cursor_index[0]][m_cursor_index[1]];
@@ -25,17 +26,17 @@ class Menu : public Component {
   }
 
   inline void _delegate_command() {
-    m_manager->sendPositionVelocity(
-      static_cast<InputBuffer <float> *> (m_buttons[1][0].get())->m_value,
-      static_cast<InputBuffer <float> *> (m_buttons[1][1].get())->m_value,
-      static_cast<InputBuffer <float> *> (m_buttons[1][2].get())->m_value
+    m_manager->sendPositionVelocityAcceleration(
+      static_cast<InputBuffer <float> *> (m_buttons[1][0].get())->m_value*m_gear_ratio,
+      static_cast<InputBuffer <float> *> (m_buttons[1][1].get())->m_value*m_gear_ratio,
+      static_cast<InputBuffer <float> *> (m_buttons[1][2].get())->m_value*m_gear_ratio
     );
   }
 
 public:
-  Menu(int x, int y, int w, int h, bool *shutdown_ptr, std::shared_ptr<TMotor::AK60Manager> &manager):
+  Menu(int x, int y, int w, int h, bool *shutdown_ptr, std::shared_ptr<TMotor::AK60Manager> &manager, float gear_ratio) :
     Component(x, y, w, h),
-    m_buttons({{
+    m_buttons{{
       std::make_shared <Button>                  (x+(w*1)/7, y+1, w/7, 3, "Permanent"),
       std::make_shared <Button>                  (x+(w*3)/7, y+1, w/7, 3, "Temporary"),
       std::make_shared <Button>                  (x+(w*5)/7, y+1, w/7, 3, "Restore")
@@ -48,12 +49,13 @@ public:
       {
       std::make_shared <Button>                  (x+(w*1)/7, y+9, w/7, 3, "Send")
       }
-     }),
-    m_cursor_index({0, 0}),
-    m_active_index({-1, -1}),
+     },
+    m_cursor_index{0, 0},
+    m_active_index{-1, -1},
     m_shutdown_ptr(shutdown_ptr),
     m_manager(manager),
-    m_locked(false)
+    m_locked(false),
+    m_gear_ratio(gear_ratio)
   {}
 
   void focus() override {
@@ -97,9 +99,9 @@ public:
     InputUpdate *update = static_cast<InputUpdate *>(packet);
 
     int key_in = update->key_in;
-    if (m_locked && key_in != '\n') {
-      return;
-    }
+    // if (m_locked && key_in != '\n') {
+    //   return;
+    // }
     switch (key_in) {
       case KEY_RIGHT:
         _get_curs_button()->update(&button_normal);
@@ -195,6 +197,8 @@ public:
   }
 
   void unmount() override {
+    m_locked = false;
+    if (m_command_thread.joinable()) m_command_thread.join();
     werase(m_win);
     for (int row = 0; row < m_buttons.size(); row++) {
       for (int col = 0; col < m_buttons[row].size(); col++) {

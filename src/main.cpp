@@ -14,7 +14,7 @@
 #include "../include/ak60.hpp"
 
 int main(int argc, char **argv) {
-  float gear_ratio = 29.0f;
+  float gear_ratio = std::stof(argv[1]);
 
   initscr();
   atexit((void (*)()) endwin);
@@ -46,11 +46,11 @@ int main(int argc, char **argv) {
   }
 
   { // Main loop
-    std::shared_ptr<TMotor::AK60Manager> manager = std::make_shared<TMotor::AK60Manager>(motor_id, gear_ratio);
-    manager->connect("vcan0");
+    std::shared_ptr<TMotor::AK60Manager> manager = std::make_shared<TMotor::AK60Manager>(motor_id);
+    manager->connect("can0");
 
     bool shutdown = false;
-    Menu menu(1+COLS/5, 0, 4*COLS/5, (COLS)/(5*2), &shutdown, manager);
+    Menu menu(1+COLS/5, 0, 4*COLS/5, (COLS)/(5*2), &shutdown, manager, gear_ratio);
     Dashboard dashboard(0, 0, COLS/5, (COLS)/(5*2), motor_id);
     
     menu.mount();
@@ -58,15 +58,15 @@ int main(int argc, char **argv) {
     menu.focus();
     dashboard.focus();
 
-    std::thread dashboard_updater([&shutdown, &dashboard, &manager] {
+    std::thread dashboard_updater([&shutdown, &dashboard, &manager, gear_ratio] {
       while (!shutdown) {
         AK60Packet motor_packet(
-          manager->current,
-          manager->position,
-          manager->velocity,
-          manager->gear_ratio,
-          manager->temperature,
-          manager->motor_fault
+          manager->getCurrent(),  //current
+          manager->getPosition(),  //position
+          manager->getVelocity(),  //velocity
+          gear_ratio,
+          manager->getTemperature(),  //temperature
+          manager->getFault()
         );
         dashboard.update(&motor_packet);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     dashboard.unmount();
     menu.unmount();
     dashboard_updater.join();
-  }  
+  }
 
   return 0;
 }

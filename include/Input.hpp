@@ -32,14 +32,17 @@ private:
     if (!m_focused) {
       state.value = ButtonState::NORMAL ;
     }
+    const char *name_c = m_name.c_str();
+    const char *string_c = m_string.c_str();
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1, m_name.c_str());
+    mvwprintw(m_win, h/2, 1, name_c);
     wattroff(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), string_c);
   }
 
   void _clean() {
-    mvwprintw(m_win, h/2, 1+m_name.length(), _get_empty(w-m_name.length()-2).c_str());
+    const char *name_c = _get_empty(w-m_name.length()-2).c_str();
+    mvwprintw(m_win, h/2, 1+m_name.length(), name_c);
     wrefresh(m_win);
   }
 
@@ -142,10 +145,12 @@ private:
     if (!m_focused) {
       state.value = ButtonState::NORMAL ;
     }
+    const char * name_c = m_name.c_str();
+    const char * string_c = m_string.c_str();
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1, m_name.c_str());
+    mvwprintw(m_win, h/2, 1, name_c);
     wattroff(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), string_c);
   }
 
   void _clean() {

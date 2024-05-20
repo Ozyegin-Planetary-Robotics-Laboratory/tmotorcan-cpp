@@ -48,7 +48,8 @@ protected:
   bool m_locking;
 
   void _log(std::string msg) {
-    mvwprintw(m_win, 1, 1, msg.c_str());
+    const char *msg_c = msg.c_str();
+    mvwprintw(m_win, 1, 1, msg_c);
     wrefresh(m_win);
   }
 
