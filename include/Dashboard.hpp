@@ -3,10 +3,10 @@
 
 #include <map>
 
-#include "ak60.hpp"
+#include "TMotor.hpp"
 #include "Component.hpp"
 
-struct AK60Packet : public UpdatePacket {
+struct AKPacket : public UpdatePacket {
   float current;
   float position;
   float velocity;
@@ -14,8 +14,8 @@ struct AK60Packet : public UpdatePacket {
   int8_t temperature;
   TMotor::MotorFault motor_fault;
 
-  AK60Packet(float current, float position, float velocity, float gear_ratio, int8_t temperature, TMotor::MotorFault motor_fault):
-    UpdatePacket(UpdatePacket::AK60),
+  AKPacket(float current, float position, float velocity, float gear_ratio, int8_t temperature, TMotor::MotorFault motor_fault):
+    UpdatePacket(UpdatePacket::AK),
     current(current),
     position(position),
     velocity(velocity),
@@ -90,7 +90,7 @@ public:
 
   void mount() override {
     box(m_win, 0, 0);
-    std::string title = std::string("AK60 ID: ") + std::to_string(m_motor_id);
+    std::string title = std::string("AK ID: ") + std::to_string(m_motor_id);
     mvwprintw(m_win, 1, (w-title.size())/2, title.c_str());
     mvwprintw(m_win, 2, 2, "Position: ");
     mvwprintw(m_win, 3, 2, "Velocity: ");
@@ -102,8 +102,8 @@ public:
   }
 
   void update(UpdatePacket *packet) override {
-    if (packet->type != UpdatePacket::AK60) return;
-    AK60Packet *update = static_cast<AK60Packet *>(packet);
+    if (packet->type != UpdatePacket::AK) return;
+    AKPacket *update = static_cast<AKPacket *>(packet);
     _clear();
     current = update->current;
     position = update->position;

@@ -1,12 +1,12 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 
-#include "ak60.hpp"
+#include "TMotor.hpp"
 #include "Component.hpp"
 #include "Input.hpp"
 
 class Menu : public Component {
-  std::shared_ptr<TMotor::AK60Manager> m_manager;
+  std::shared_ptr<TMotor::AKManager> m_manager;
   typedef std::shared_ptr<Component> ComponentPtr;
   std::vector<std::vector <ComponentPtr>> m_buttons;
   int m_cursor_index[2];
@@ -34,7 +34,7 @@ class Menu : public Component {
   }
 
 public:
-  Menu(int x, int y, int w, int h, bool *shutdown_ptr, std::shared_ptr<TMotor::AK60Manager> &manager, float gear_ratio) :
+  Menu(int x, int y, int w, int h, bool *shutdown_ptr, std::shared_ptr<TMotor::AKManager> &manager, float gear_ratio) :
     Component(x, y, w, h),
     m_buttons{{
       std::make_shared <Button>                  (x+(w*1)/7, y+1, w/7, 3, "Permanent"),

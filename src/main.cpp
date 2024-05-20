@@ -11,7 +11,7 @@
 #include "../include/Button.hpp"
 #include "../include/Input.hpp"
 #include "../include/Menu.hpp"
-#include "../include/ak60.hpp"
+#include "../include/TMotor.hpp"
 
 int main(int argc, char **argv) {
   float gear_ratio = std::stof(argv[1]);
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
   }
 
   { // Main loop
-    std::shared_ptr<TMotor::AK60Manager> manager = std::make_shared<TMotor::AK60Manager>(motor_id);
+    std::shared_ptr<TMotor::AKManager> manager = std::make_shared<TMotor::AKManager>(motor_id);
     manager->connect("can0");
 
     bool shutdown = false;
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     std::thread dashboard_updater([&shutdown, &dashboard, &manager, gear_ratio] {
       while (!shutdown) {
-        AK60Packet motor_packet(
+        AKPacket motor_packet(
           manager->getCurrent(),  //current
           manager->getPosition(),  //position
           manager->getVelocity(),  //velocity

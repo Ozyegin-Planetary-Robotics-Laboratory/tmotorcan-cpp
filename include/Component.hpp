@@ -32,7 +32,7 @@ struct UpdatePacket {
     NONE=0,
     BUTTON,
     INPUT,
-    AK60
+    AK
   };
 
   Type type;

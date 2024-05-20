@@ -83,12 +83,14 @@ std::string fault_to_string(MotorFault &fault) {
 
 
 /**
- * @brief AK60 Motor CAN Interface
- * This class is used to communicate with the AK60 motors via CAN bus. Accepted IDs are uint8_t types.
+ * @brief AK Motors CAN Interface
+ * This class is used to communicate with the AK60 & AK70 motors via CAN bus. Accepted IDs are uint8_t types.
  * The class is designed to be used with a single instance. It is not thread-safe. After the appropriate control mode is selected,
  * members can be directly changed to control the motor. The class will handle the rest. Create one class for each motor.
+ * 
+ * @note Only tested with AK60 and AK70s.
  */
-class AK60Manager {
+class AKManager {
 protected:
   int _can_fd;
   bool _shutdown;
@@ -125,14 +127,14 @@ protected:
 public:
 
   /**
-   * @class AK60Manager
+   * @class AKManager
    * @brief Class for managing AK60 motors over CAN interface.
    *
-   * The AK60Manager class provides functionality to control AK60 motors
+   * The AKManager class provides functionality to control AK60 motors
    * using the CAN interface. It allows setting the motor mode, position,
    * and reading motor messages.
    */
-  AK60Manager(const uint8_t motor_id) :
+  AKManager(const uint8_t motor_id) :
     _can_fd(-1),
     _shutdown(false),
     _motor_id(motor_id),
@@ -146,11 +148,11 @@ public:
   }
 
   /**
-   * @brief Destructor for the AK60Manager class.
+   * @brief Destructor for the AKManager class.
    *
    * This destructor sets the _shutdown flag to true and closes the _can_fd file descriptor.
    */
-  ~AK60Manager() {
+  ~AKManager() {
     _shutdown = true;
     close(_can_fd);
   }
