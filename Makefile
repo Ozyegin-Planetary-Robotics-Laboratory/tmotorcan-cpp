@@ -1,22 +1,19 @@
 CC = g++
-CFLAGS = -o bin/main
-LIBS = -lpthread
+CFLAGS = -o bin/main -g
+LIBS = -lpthread -lncurses
 SRC_DIR = src
+BIN_DIR = bin
+INC_DIR = include
 
-all: bin/main
+$(BIN_DIR)/%: $(SRC_DIR)/%.cpp
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
-bin/main: $(SRC_DIR)/ak60test.cpp $(SRC_DIR)/ak60.hpp
-	$(CC) $(CFLAGS) $(SRC_DIR)/ak60test.cpp $(SRC_DIR)/ak60.hpp $(LIBS)
-
-test: bin/main
-	./bin/main
-
-setup:
-	ip link set can0 txqueuelen 1000
-	ip link set can0 type can bitrate 1000000
-	ip link set up can0
+all: $(BIN_DIR)/main
 
 clean:
-	rm -rf bin/*
+	rm -f bin/*
 
-.PHONY: all test setup clean
+install: all
+	cp bin/main /usr/local/bin/tmotorcan-cpp
+
+.PHONY: all clean install
