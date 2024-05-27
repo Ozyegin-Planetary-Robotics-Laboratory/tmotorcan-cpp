@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -o bin/main -g
-LIBS = -lpthread -lncurses
+LIBS = -lncurses
 SRC_DIR = src
 BIN_DIR = bin
 INC_DIR = include
@@ -14,6 +14,7 @@ clean:
 	rm -f bin/*
 
 install: all
-	cp bin/main /usr/local/bin/tmotorcan-cpp
+	sudo cp bin/main /usr/local/bin/tmotorui
+	sudo cp include/TMotor.hpp /usr/local/include/TMotor.hpp
 
 .PHONY: all clean install
