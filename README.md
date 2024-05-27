@@ -4,7 +4,7 @@ The purpose of this header-only motors library is to accommodate an analogy of t
 
 ## Example UI
 
-The project uses Makefile for compiling a demonstrative example. First off, connect an USB-to-CAN adapter to your computer that accommodates a SocketCAN network interface.
+The project uses Makefile for compiling a demonstrative example. First off, connect an USB-to-CAN adapter to your computer that accommodates a SocketCAN network interface and setup the network interface.
 
 `make all`
 
@@ -12,7 +12,7 @@ Once compilation is complete, you may test the performance of the library by usi
 
 `./bin/main <reduction>`
 
-To install the application, simply do,
+To install the application alongside the header only library, simply do,
 
 `make install`
 
