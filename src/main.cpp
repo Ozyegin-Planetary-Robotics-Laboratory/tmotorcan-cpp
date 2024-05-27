@@ -14,7 +14,15 @@
 #include "../include/TMotor.hpp"
 
 int main(int argc, char **argv) {
-  float gear_ratio = std::stof(argv[1]);
+  float gear_ratio;
+  try
+  {
+    float gear_ratio = std::stof(argv[1]);
+  }
+  catch(const std::exception& e)
+  {
+    gear_ratio = 1.0f;
+  }
 
   initscr();
   atexit((void (*)()) endwin);

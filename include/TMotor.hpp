@@ -27,6 +27,8 @@
 #include <chrono>
 #include <mutex>
 
+#define TMOTOR_AK_POLE_PAIRS 21
+
 namespace TMotor
 {
 
@@ -356,21 +358,21 @@ public:
   }
 
   /**
-   * @warning This function is not tested with.
+   * @brief Sends a radial velocity command to the motor.
    * 
-   * @warning The velocity unit is assumed to be RPM, however, it is not clear.
+   * @param vel The radial velocity to move the motor with. (degrees/sec)
   */
-  void sendVelocity(int32_t velocity) {
+  void sendVelocity(float vel) {
     if (_can_fd < 0) {
       return;
     }
+    int32_t vel_int = ((int32_t) vel)*TMOTOR_AK_POLE_PAIRS;
     struct can_frame wframe;
     wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::VELOCITY;
-    int32_t vel_cmd_int = velocity;
-    wframe.data[0] = vel_cmd_int & 0xFF;
-    wframe.data[1] = (vel_cmd_int >> 8) & 0xFF;
-    wframe.data[2] = (vel_cmd_int >> 16) & 0xFF;
-    wframe.data[3] = (vel_cmd_int >> 24) & 0xFF;
+    wframe.data[3] = (vel_int & 0xFF);
+    wframe.data[2] = (vel_int >> 8) & 0xFF;
+    wframe.data[1] = (vel_int >> 16) & 0xFF;
+    wframe.data[0] = (vel_int >> 24) & 0xFF;
     wframe.can_dlc = 4;
     int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
     if (nbytes < 0) {
@@ -383,7 +385,7 @@ public:
    * 
    * @param pose The position to bring the motor to. (degrees)
    * 
-   * @note The input is between -36000 and 36000.
+   * @note The input is between -36000 and 36000. Also, take care as the default speed is high.
   */
   void sendPosition(float pose) {
     if (_can_fd < 0) {
@@ -393,7 +395,7 @@ public:
     pose = pose < -36000.0f ? -36000.0f : pose;
     struct can_frame wframe;
     wframe.can_id = CAN_EFF_FLAG | _motor_id | MotorModeID::POSITION;
-    int32_t pos_cmd_int = (int32_t) (pose * 10000.0f);
+    int32_t pos_cmd_int = (int32_t) (pose);
     wframe.data[0] = (pos_cmd_int >> 24) & 0xFF;
     wframe.data[1] = (pos_cmd_int >> 16) & 0xFF;
     wframe.data[2] = (pos_cmd_int >> 8) & 0xFF;
@@ -406,8 +408,6 @@ public:
   }
 
   /**
-   * @warning This function is not tested with.
-   * 
    * @brief Brings the motor to the specified position with the specified velocity and acceleration.
    * 
    * @param pose The position to bring the motor to. (degrees)

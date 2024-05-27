@@ -3,6 +3,7 @@
 
 #include "TMotor.hpp"
 #include "Component.hpp"
+#include "Button.hpp"
 #include "Input.hpp"
 
 class Menu : public Component {
@@ -99,9 +100,9 @@ public:
     InputUpdate *update = static_cast<InputUpdate *>(packet);
 
     int key_in = update->key_in;
-    // if (m_locked && key_in != '\n') {
-    //   return;
-    // }
+    if (m_locked && key_in != '\n') {
+      return;
+    }
     switch (key_in) {
       case KEY_RIGHT:
         _get_curs_button()->update(&button_normal);
