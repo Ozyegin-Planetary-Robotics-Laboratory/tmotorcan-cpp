@@ -1,7 +1,7 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 
-#include "TMotor.hpp"
+#include "tmotor.hpp"
 #include "Component.hpp"
 #include "Button.hpp"
 #include "Input.hpp"

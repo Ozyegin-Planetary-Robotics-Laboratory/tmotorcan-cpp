@@ -11,7 +11,7 @@
 #include "../include/Button.hpp"
 #include "../include/Input.hpp"
 #include "../include/Menu.hpp"
-#include "../include/TMotor.hpp"
+#include "../include/tmotor.hpp"
 
 int main(int argc, char **argv) {
   float gear_ratio;

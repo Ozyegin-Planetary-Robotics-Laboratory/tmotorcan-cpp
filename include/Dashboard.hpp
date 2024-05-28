@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "TMotor.hpp"
+#include "tmotor.hpp"
 #include "Component.hpp"
 
 struct AKPacket : public UpdatePacket {

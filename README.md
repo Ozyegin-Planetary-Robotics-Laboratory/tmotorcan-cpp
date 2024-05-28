@@ -1,13 +1,15 @@
 # TMotor C++ SocketCAN Library
 
-The purpose of this library is to create a high-level interface for communicating with TMotor AK series actuators using SocketCAN. 
+The purpose of this library is to create a high-level interface for communicating with TMotor AK series actuators using SocketCAN. Currently tested on Ubuntu 22.04.
 
 ## Example UI
 
-The project uses a Bash script for compiling a demonstrative application as well as the library then installing it on the local computer.
+The project uses CMake for compiling a demonstrative application as well as the library then installing it on the local user.
 
 ```bash
-bash install.bash
+mkdir build && cd build
+cmake ..
+sudo make install
 ```
 
 Once installation is complete, you may test-control any AK motor by using the graphical user interface.
