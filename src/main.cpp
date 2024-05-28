@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 
   { // Main loop
     std::shared_ptr<TMotor::AKManager> manager = std::make_shared<TMotor::AKManager>(motor_id);
-    manager->connect("can0");
+    manager->connect("vcan0");
 
     bool shutdown = false;
     Menu menu(1+COLS/5, 0, 4*COLS/5, (COLS)/(5*2), &shutdown, manager, gear_ratio);

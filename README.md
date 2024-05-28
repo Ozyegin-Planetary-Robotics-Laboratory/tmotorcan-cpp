@@ -1,20 +1,30 @@
 # TMotor C++ SocketCAN Library
 
-The purpose of this header-only motors library is to accommodate an analogy of the Python TMotorCAN in C++ such that research & development can be sped by giving more freedom to new-coming developers that want to get right into working with these motors in C++.
+The purpose of this library is to create a high-level interface for communicating with TMotor AK series actuators using SocketCAN. 
 
 ## Example UI
 
-The project uses Makefile for compiling a demonstrative example. First off, connect an USB-to-CAN adapter to your computer that accommodates a SocketCAN network interface and setup the network interface.
+The project uses a Bash script for compiling a demonstrative application as well as the library then installing it on the local computer.
 
-`make all`
+```bash
+bash install.bash
+```
 
-Once compilation is complete, you may test the performance of the library by using the graphical user interface.
+Once installation is complete, you may test-control any AK motor by using the graphical user interface.
 
-`./bin/main <reduction>`
+```bash
+tmotorui <reduction>
+```
 
-To install the application alongside the header only library, simply do,
+You may also access the motor class by including the "tmotor.hpp" header in your project, and using the appropriate compiler flag.
 
-`make install`
+```cpp
+#include <tmotor.hpp>
+```
+
+```bash
+g++ -o main main.cpp -ltmotor
+```
 
 ## Development
 
