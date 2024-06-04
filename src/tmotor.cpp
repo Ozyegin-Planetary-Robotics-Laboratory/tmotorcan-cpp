@@ -68,6 +68,17 @@ AKManager::AKManager(const uint8_t motor_id) :
   return;
 }
 
+AKManager::AKManager(const AKManager& other) :
+  _can_fd(-1),
+  _shutdown(false),
+  _motor_id(other._motor_id),
+  _current(0.0f),
+  _velocity(0.0f),
+  _position(0.0f),
+  _temperature(0),
+  _motor_fault(MotorFault::NONE)
+{}
+
 AKManager::~AKManager() {
   _shutdown = true;
   close(_can_fd);

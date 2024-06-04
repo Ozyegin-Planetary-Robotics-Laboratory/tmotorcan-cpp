@@ -96,6 +96,15 @@ public:
   AKManager(const uint8_t motor_id);
 
   /**
+   * @brief Copy constructor for the AKManager class.
+   *
+   * This constructor creates a new AKManager object by copying the values from another AKManager object.
+   *
+   * @param other The AKManager object to copy from.
+   */
+  AKManager(const AKManager& other);
+
+  /**
    * @brief Destructor for the AKManager class.
    *
    * This destructor sets the _shutdown flag to true and closes the _can_fd file descriptor.
