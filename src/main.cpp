@@ -15,13 +15,17 @@
 
 int main(int argc, char **argv) {
   float gear_ratio;
+  std::string can_interface;
   try
   {
-    float gear_ratio = std::stof(argv[1]);
+    gear_ratio = std::stof(argv[1]);
+    can_interface = argv[2];
+    if (can_interface != "vcan0" && can_interface != "can0") throw std::runtime_error("Invalid CAN interface");
   }
   catch(const std::exception& e)
   {
     gear_ratio = 1.0f;
+    can_interface = "vcan0";
   }
 
   initscr();

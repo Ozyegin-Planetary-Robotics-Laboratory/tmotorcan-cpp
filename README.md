@@ -15,7 +15,7 @@ sudo make install
 Once installation is complete, you may test-control any AK motor by using the graphical user interface.
 
 ```bash
-tmotorui <reduction>
+tmotorui <reduction> <can_interface>
 ```
 
 You may also access the motor class by including the "tmotor.hpp" header in your project, and using the appropriate compiler flag.
