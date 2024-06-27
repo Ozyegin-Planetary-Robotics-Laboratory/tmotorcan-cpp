@@ -10,6 +10,8 @@ add_library(tmotor STATIC
   src/tmotor.cpp
 )
 
+set_property(TARGET tmotor PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 # Create an executable
 add_executable(tmotorui
   src/main.cpp

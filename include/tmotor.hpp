@@ -86,12 +86,17 @@ protected:
 public:
 
   /**
-   * @class AKManager
-   * @brief Class for managing AK60 motors over CAN interface.
+   * @brief Default constructor for the AKManager class.
    *
-   * The AKManager class provides functionality to control AK60 motors
-   * using the CAN interface. It allows setting the motor mode, position,
-   * and reading motor messages.
+   * This constructor initializes the AKManager object without an active ID, you must set the ID before
+   * calling connect() by using setMotorID().
+   */
+  AKManager();
+
+  /**
+   * @brief Constructor for the AKManager class.
+   * 
+   * This constructor initializes the AKManager object with the motor ID.
    */
   AKManager(const uint8_t motor_id);
 
@@ -110,6 +115,13 @@ public:
    * This destructor sets the _shutdown flag to true and closes the _can_fd file descriptor.
    */
   ~AKManager();
+
+  /**
+   * @brief Set the motor ID.
+   * 
+   * @param motor_id The motor ID to set.
+   */
+  void setMotorID(const uint8_t motor_id);
 
   /**
    * @brief Get the motor ID.

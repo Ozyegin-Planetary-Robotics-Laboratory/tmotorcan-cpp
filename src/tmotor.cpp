@@ -55,6 +55,19 @@ void AKManager::__read_motor_message() {
   _motor_fault = (MotorFault) rframe.data[7];
 }
 
+AKManager::AKManager() :
+  _can_fd(-1),
+  _shutdown(false),
+  _motor_id(-1),
+  _current(0.0f),
+  _velocity(0.0f),
+  _position(0.0f),
+  _temperature(0),
+  _motor_fault(MotorFault::NONE)
+{
+  return;
+}
+
 AKManager::AKManager(const uint8_t motor_id) :
   _can_fd(-1),
   _shutdown(false),
@@ -82,6 +95,10 @@ AKManager::AKManager(const AKManager& other) :
 AKManager::~AKManager() {
   _shutdown = true;
   close(_can_fd);
+}
+
+void AKManager::setMotorID(const uint8_t motor_id) {
+  _motor_id = motor_id;
 }
 
 uint8_t AKManager::getMotorID() {
