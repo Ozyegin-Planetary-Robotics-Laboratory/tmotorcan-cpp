@@ -14,7 +14,7 @@ private:
       state = ButtonState::NORMAL;
     }
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, (w-m_text.length())/2, m_text.c_str());
+    mvwprintw(m_win, h/2, (w-m_text.length())/2, "%s", m_text.c_str());
     wattroff(m_win, COLOR_PAIR(state.value));
   }
 

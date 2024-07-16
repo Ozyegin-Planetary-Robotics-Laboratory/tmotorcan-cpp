@@ -49,7 +49,7 @@ protected:
 
   void _log(std::string msg) {
     const char *msg_c = msg.c_str();
-    mvwprintw(m_win, 1, 1, msg_c);
+    mvwprintw(m_win, 1, 1, "%s", msg_c);
     wrefresh(m_win);
   }
 

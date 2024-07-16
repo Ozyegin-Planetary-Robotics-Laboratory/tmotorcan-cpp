@@ -100,9 +100,11 @@ public:
     InputUpdate *update = static_cast<InputUpdate *>(packet);
 
     int key_in = update->key_in;
+    #ifdef LOCK_ENABLED
     if (m_locked && key_in != '\n') {
       return;
     }
+    #endif
     switch (key_in) {
       case KEY_RIGHT:
         _get_curs_button()->update(&button_normal);

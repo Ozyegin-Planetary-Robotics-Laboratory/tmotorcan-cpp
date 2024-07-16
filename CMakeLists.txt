@@ -5,6 +5,9 @@ project(MyProject)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Comment the below line to disable the lock feature when sending commandss
+# add_definitions(-DLOCK_ENABLED)
+
 # Create a static library
 add_library(tmotor STATIC
   src/tmotor.cpp

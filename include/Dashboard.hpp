@@ -53,21 +53,21 @@ class Dashboard : public Component {
   }
 
   void _clear() {
-    mvwprintw(m_win, 2, 2+11, _get_empty(w-3-11).c_str());
-    mvwprintw(m_win, 3, 2+11, _get_empty(w-3-11).c_str());
-    mvwprintw(m_win, 4, 2+10, _get_empty(w-3-10).c_str());
-    mvwprintw(m_win, 5, 2+13, _get_empty(w-3-13).c_str());
-    mvwprintw(m_win, 6, 2+14, _get_empty(w-3-14).c_str());
-    mvwprintw(m_win, 7, 2+14, _get_empty(w-3-14).c_str());
+    mvwprintw(m_win, 2, 2+11, "%s", _get_empty(w-3-11).c_str());
+    mvwprintw(m_win, 3, 2+11, "%s", _get_empty(w-3-11).c_str());
+    mvwprintw(m_win, 4, 2+10, "%s", _get_empty(w-3-10).c_str());
+    mvwprintw(m_win, 5, 2+13, "%s", _get_empty(w-3-13).c_str());
+    mvwprintw(m_win, 6, 2+14, "%s", _get_empty(w-3-14).c_str());
+    mvwprintw(m_win, 7, 2+14, "%s", _get_empty(w-3-14).c_str());
   }
 
   void _draw() {
-    mvwprintw(m_win, 2, 2+11, "%.2f", position);
-    mvwprintw(m_win, 3, 2+11, "%.2f", velocity);
+    mvwprintw(m_win, 2, 2+11, "%.2f", position/gear_ratio);
+    mvwprintw(m_win, 3, 2+11, "%.2f", velocity/gear_ratio);
     mvwprintw(m_win, 4, 2+10, "%.2f", current);
     mvwprintw(m_win, 5, 2+13, "%.2f", gear_ratio);
     mvwprintw(m_win, 6, 2+14, "%.2i", temperature);
-    mvwprintw(m_win, 7, 2+14, _fault_to_str(motor_fault).c_str());
+    mvwprintw(m_win, 7, 2+14, "%s", _fault_to_str(motor_fault).c_str());
   }
 
 public:
@@ -91,7 +91,7 @@ public:
   void mount() override {
     box(m_win, 0, 0);
     std::string title = std::string("AK ID: ") + std::to_string(m_motor_id);
-    mvwprintw(m_win, 1, (w-title.size())/2, title.c_str());
+    mvwprintw(m_win, 1, (w-title.size())/2, "%s", title.c_str());
     mvwprintw(m_win, 2, 2, "Position: ");
     mvwprintw(m_win, 3, 2, "Velocity: ");
     mvwprintw(m_win, 4, 2, "Current: ");

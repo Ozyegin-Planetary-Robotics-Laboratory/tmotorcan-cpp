@@ -32,17 +32,14 @@ private:
     if (!m_focused) {
       state.value = ButtonState::NORMAL ;
     }
-    const char *name_c = m_name.c_str();
-    const char *string_c = m_string.c_str();
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1, name_c);
+    mvwprintw(m_win, h/2, 1, "%s", m_name.c_str());
     wattroff(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1+m_name.length(), string_c);
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", m_string.c_str());
   }
 
   void _clean() {
-    const char *name_c = _get_empty(w-m_name.length()-2).c_str();
-    mvwprintw(m_win, h/2, 1+m_name.length(), name_c);
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", _get_empty(w-m_name.length()-2).c_str());
     wrefresh(m_win);
   }
 
@@ -145,16 +142,14 @@ private:
     if (!m_focused) {
       state.value = ButtonState::NORMAL ;
     }
-    const char * name_c = m_name.c_str();
-    const char * string_c = m_string.c_str();
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1, name_c);
+    mvwprintw(m_win, h/2, 1, "%s", m_name.c_str());
     wattroff(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1+m_name.length(), string_c);
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", m_string.c_str());
   }
 
   void _clean() {
-    mvwprintw(m_win, h/2, 1+m_name.length(), _get_empty(w-m_name.length()-2).c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", _get_empty(w-m_name.length()-2).c_str());
   }
 
   void _get_input_str() {
@@ -177,7 +172,7 @@ private:
       m_string = "0";
     }
     _clean();
-    mvwprintw(m_win, h/2, 1+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", m_string.c_str());
     box(m_win, 0, 0);
     curs_set(0);
     raw();
@@ -262,13 +257,13 @@ private:
       state.value = ButtonState::NORMAL ;
     }
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 2, m_name.c_str());
+    mvwprintw(m_win, h/2, 2, "%s", m_name.c_str());
     wattroff(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 2+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 2+m_name.length(), "%s", m_string.c_str());
   }
 
   void _clean() {
-    mvwprintw(m_win, h/2, 2+m_name.length(), _get_empty(w-m_name.length()-3).c_str());
+    mvwprintw(m_win, h/2, 2+m_name.length(), "%s", _get_empty(w-m_name.length()-3).c_str());
   }
 
   void _get_input_str() {
@@ -293,7 +288,7 @@ private:
       m_string = "0";
     }
     _clean();
-    mvwprintw(m_win, h/2, 1+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", m_string.c_str());
     box(m_win, 0, 0);
     curs_set(0);
     raw();
@@ -358,7 +353,6 @@ public:
   }
 };
 
-
 template <> class InputBuffer <float> : public Component {
 private:
   std::string m_name;
@@ -379,13 +373,13 @@ private:
       state.value = ButtonState::NORMAL ;
     }
     wattron(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1, m_name.c_str());
+    mvwprintw(m_win, h/2, 1, "%s", m_name.c_str());
     wattroff(m_win, COLOR_PAIR(state.value));
-    mvwprintw(m_win, h/2, 1+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", m_string.c_str());
   }
 
   void _clean() {
-    mvwprintw(m_win, h/2, 1+m_name.length(), _get_empty(w-m_name.length()-3).c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", _get_empty(w-m_name.length()-3).c_str());
   }
 
   void _get_input_str() {
@@ -407,7 +401,7 @@ private:
     }
     m_string = std::to_string(m_value);
     _clean();
-    mvwprintw(m_win, h/2, 1+m_name.length(), m_string.c_str());
+    mvwprintw(m_win, h/2, 1+m_name.length(), "%s", m_string.c_str());
     box(m_win, 0, 0);
     curs_set(0);
     raw();
