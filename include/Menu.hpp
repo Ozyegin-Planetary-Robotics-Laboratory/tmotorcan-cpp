@@ -16,6 +16,10 @@ class Menu : public Component {
   bool m_locked;
   std::thread m_command_thread;
   float m_gear_ratio;
+  bool w_pressed = false;
+  bool s_pressed = false;
+  std::chrono::steady_clock::time_point last_update_time;
+
   
   ComponentPtr _get_curs_button() {
     return m_buttons[m_cursor_index[0]][m_cursor_index[1]];
@@ -100,102 +104,150 @@ public:
     InputUpdate *update = static_cast<InputUpdate *>(packet);
 
     int key_in = update->key_in;
+
     #ifdef LOCK_ENABLED
     if (m_locked && key_in != '\n') {
-      return;
+        return;
     }
     #endif
+
     switch (key_in) {
-      case KEY_RIGHT:
-        _get_curs_button()->update(&button_normal);
-        m_cursor_index[1] = (m_cursor_index[1] + 1) % (m_buttons[m_cursor_index[0]].size());
-        _get_curs_button()->update(&button_hover);
-        break;
-      case KEY_LEFT:
-        _get_curs_button()->update(&button_normal);
-        m_cursor_index[1]--;
-        if (m_cursor_index[1] == -1) { // Modulos doesn't map -1.
-          m_cursor_index[1] = m_buttons[m_cursor_index[0]].size()-1;
-        } else {
-          m_cursor_index[1] %= m_buttons[m_cursor_index[0]].size();
-        }
-        _get_curs_button()->update(&button_hover);
-        break;
-      case KEY_UP:
-        _get_curs_button()->update(&button_normal);
-        m_cursor_index[0]--;
-        if (m_cursor_index[0] == -1) { // Modulos doesn't map -1.
-          m_cursor_index[0] = m_buttons.size()-1;
-        } else {
-          m_cursor_index[0] %= m_buttons.size();
-        }
-
-        // Second index safeguard
-        if (m_cursor_index[1] > m_buttons[m_cursor_index[0]].size()-1) {
-          m_cursor_index[1] = m_buttons[m_cursor_index[0]].size()-1;
-        }
-        if (m_cursor_index[1] < 0) {
-          m_cursor_index[1] = 0;
-        }
-        _get_curs_button()->update(&button_hover);
-        break;
-      case KEY_DOWN:
-        _get_curs_button()->update(&button_normal);
-        m_cursor_index[0]++;
-        if (m_cursor_index[0] == -1) { // Modulos doesn't map -1.
-          m_cursor_index[0] = m_buttons.size()-1;
-        } else {
-          m_cursor_index[0] %= m_buttons.size();
-        }
-
-        // Second index safeguard
-        if (m_cursor_index[1] > m_buttons[m_cursor_index[0]].size()-1) {
-          m_cursor_index[1] = m_buttons[m_cursor_index[0]].size()-1;
-        }
-        if (m_cursor_index[1] < 0) {
-          m_cursor_index[1] = 0;
-        }
-        _get_curs_button()->update(&button_hover);
-        break;
-      case '\n':
-        if (m_cursor_index[0] == 1) {             // Input Buffers
-          _get_curs_button()->update(packet);
-        } else {                                  // Buttons
-          _get_curs_button()->update(&button_active);
-          if (m_cursor_index[0] == 0) {           // Origin Actions
-            if (m_cursor_index[1] == 0) {         // Permanent
-              m_manager->setOrigin(TMotor::MotorOriginMode::PERMANENT);
-            }
-            if (m_cursor_index[1] == 1) {
-              m_manager->setOrigin(TMotor::MotorOriginMode::TEMPORARY);
-            }
-            if (m_cursor_index[1] == 2) {
-              m_manager->setOrigin(TMotor::MotorOriginMode::RESTORE);
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        case KEY_RIGHT:
+            _get_curs_button()->update(&button_normal);
+            m_cursor_index[1] = (m_cursor_index[1] + 1) % (m_buttons[m_cursor_index[0]].size());
             _get_curs_button()->update(&button_hover);
-          }
-          if (m_cursor_index[0] == 2) {           // Send
-            if (m_locked) {                       // Deactivate send
-              m_locked = false;
-              m_command_thread.join();
-              _get_curs_button()->update(&button_hover);
-            } else {                              // Activate send
-              m_locked = true;
-              m_command_thread = std::thread([this] {
-                while (m_locked) {
-                  _delegate_command();
-                  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                }
-              });
-              _get_curs_button()->update(&button_active);
+            break;
+        case KEY_LEFT:
+            _get_curs_button()->update(&button_normal);
+            m_cursor_index[1]--;
+            if (m_cursor_index[1] == -1) {
+                m_cursor_index[1] = m_buttons[m_cursor_index[0]].size()-1;
+            } else {
+                m_cursor_index[1] %= m_buttons[m_cursor_index[0]].size();
             }
-          }          
-        }
-        break;
-      default:
-        break;
+            _get_curs_button()->update(&button_hover);
+            break;
+        case KEY_UP:
+            _get_curs_button()->update(&button_normal);
+            m_cursor_index[0]--;
+            if (m_cursor_index[0] == -1) {
+                m_cursor_index[0] = m_buttons.size()-1;
+            } else {
+                m_cursor_index[0] %= m_buttons.size();
+            }
+            if (m_cursor_index[1] > m_buttons[m_cursor_index[0]].size()-1) {
+                m_cursor_index[1] = m_buttons[m_cursor_index[0]].size()-1;
+            }
+            if (m_cursor_index[1] < 0) {
+                m_cursor_index[1] = 0;
+            }
+            _get_curs_button()->update(&button_hover);
+            break;
+        case KEY_DOWN:
+            _get_curs_button()->update(&button_normal);
+            m_cursor_index[0]++;
+            if (m_cursor_index[0] == -1) {
+                m_cursor_index[0] = m_buttons.size()-1;
+            } else {
+                m_cursor_index[0] %= m_buttons.size();
+            }
+            if (m_cursor_index[1] > m_buttons[m_cursor_index[0]].size()-1) {
+                m_cursor_index[1] = m_buttons[m_cursor_index[0]].size()-1;
+            }
+            if (m_cursor_index[1] < 0) {
+                m_cursor_index[1] = 0;
+            }
+            _get_curs_button()->update(&button_hover);
+            break;
+        case '\n':
+            if (m_cursor_index[0] == 1) { 
+                _get_curs_button()->update(packet);
+            } else { 
+                _get_curs_button()->update(&button_active);
+                if (m_cursor_index[0] == 0) { 
+                    if (m_cursor_index[1] == 0) {
+                        m_manager->setOrigin(TMotor::MotorOriginMode::PERMANENT);
+                    }
+                    if (m_cursor_index[1] == 1) {
+                        m_manager->setOrigin(TMotor::MotorOriginMode::TEMPORARY);
+                    }
+                    if (m_cursor_index[1] == 2) {
+                        m_manager->setOrigin(TMotor::MotorOriginMode::RESTORE);
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    _get_curs_button()->update(&button_hover);
+                }
+                if (m_cursor_index[0] == 2) { 
+                    if (m_locked) { 
+                        m_locked = false;
+                        m_command_thread.join();
+                        _get_curs_button()->update(&button_hover);
+                    } else { 
+                        m_locked = true;
+                        m_command_thread = std::thread([this] {
+                            while (m_locked) {
+                                _delegate_command();
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            }
+                        });
+                        _get_curs_button()->update(&button_active);
+                    }
+                }
+                if (m_cursor_index[0] == 3) { 
+                    auto pos_input = static_cast<InputBuffer<float> *>(m_buttons[1][0].get());
+                    pos_input->m_value += 10;
+                    pos_input->m_string = std::to_string(pos_input->m_value); 
+                    pos_input->mount();
+                    _get_curs_button()->update(&button_hover);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    _get_curs_button()->update(&button_normal);
+                }
+                if (m_cursor_index[0] == 4) { 
+                    auto pos_input = static_cast<InputBuffer<float> *>(m_buttons[1][0].get());
+                    pos_input->m_value -= 10;
+                    pos_input->m_string = std::to_string(pos_input->m_value);
+                    pos_input->mount(); 
+                    _get_curs_button()->update(&button_hover);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    _get_curs_button()->update(&button_normal);
+                }
+            }
+            break;
+        case 'w':
+            w_pressed = true;
+            break;
+        case 's':
+            s_pressed = true;
+            break;
+        default:
+            break;
     }
+
+    
+    auto current_time = std::chrono::steady_clock::now();
+    if (w_pressed && (current_time - last_update_time) >= std::chrono::milliseconds(100)) {
+        
+        auto pos_input = static_cast<InputBuffer<float> *>(m_buttons[1][0].get());
+        pos_input->m_value += 1;
+        pos_input->m_string = std::to_string(pos_input->m_value); 
+        pos_input->mount();
+        m_buttons[3][0]->update(&button_hover);
+        last_update_time = current_time;
+    }
+    if (s_pressed && (current_time - last_update_time) >= std::chrono::milliseconds(100)) {
+        
+        auto pos_input = static_cast<InputBuffer<float> *>(m_buttons[1][0].get());
+        pos_input->m_value -= 1;
+        pos_input->m_string = std::to_string(pos_input->m_value); 
+        pos_input->mount();
+        m_buttons[4][0]->update(&button_hover);
+        last_update_time = current_time;
+    }
+
+    
+    if (key_in != 'w') w_pressed = false;
+    if (key_in != 's') s_pressed = false;
+
     wrefresh(m_win);
   }
 

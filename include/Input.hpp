@@ -16,7 +16,6 @@ struct InputUpdate : public UpdatePacket {
 template <typename T> class InputBuffer : public Component {
 private:
   std::string m_name;
-  std::string m_string;
   ButtonState m_state;
 
   std::string _get_empty(size_t len) {
@@ -70,6 +69,7 @@ private:
 
 public:
   T m_value;
+  std::string m_string;
 
   InputBuffer(std::string name, int x, int y, int w, int h):
     Component(x, y, w, h),
@@ -126,7 +126,6 @@ public:
 template <> class InputBuffer <int> : public Component {
 private:
   std::string m_name;
-  std::string m_string;
   ButtonState m_state;
 
   std::string _get_empty(size_t len) {
@@ -183,6 +182,7 @@ private:
 
 public:
   int m_value;
+  std::string m_string;
 
   InputBuffer(std::string name, int x, int y, int w, int h):
     Component(x, y, w, h),
@@ -240,7 +240,6 @@ public:
 class InputBufferHex : public Component {
 private:
   std::string m_name;
-  std::string m_string;
   ButtonState m_state;
 
   std::string _get_empty(size_t len) {
@@ -299,6 +298,7 @@ private:
 
 public:
   int m_value;
+  std::string m_string;
 
   InputBufferHex(std::string name, int x, int y, int w, int h):
     Component(x, y, w, h),
@@ -356,7 +356,6 @@ public:
 template <> class InputBuffer <float> : public Component {
 private:
   std::string m_name;
-  std::string m_string;
   ButtonState m_state;
 
   std::string _get_empty(size_t len) {
@@ -412,6 +411,7 @@ private:
 
 public:
   float m_value;
+  std::string m_string;
 
   InputBuffer(std::string name, int x, int y, int w, int h):
     Component(x, y, w, h),
@@ -465,6 +465,5 @@ public:
     wrefresh(m_win);
   }
 };
-
 
 #endif // INPUT_HPP
