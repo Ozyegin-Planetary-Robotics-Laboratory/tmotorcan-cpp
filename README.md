@@ -1,10 +1,4 @@
-# TMotor C++ SocketCAN Library
 
-The purpose of this library is to create a high-level interface for communicating with TMotor AK series actuators using SocketCAN. Currently tested on Ubuntu 22.04.
-
-## Example UI
-
-The project uses CMake for compiling a demonstrative application as well as the library then installing it on the local user.
 
 ```bash
 mkdir build && cd build
@@ -18,16 +12,16 @@ Once installation is complete, you may test-control any AK motor by using the gr
 tmotorui <reduction> <can_interface>
 ```
 
-You may also access the motor class by including the "tmotor.hpp" header in your project, and using the appropriate compiler flag.
+![Image of GUI](include/gui.png)
 
-```cpp
-#include <tmotor.hpp>
-```
+If you push UP or DOWN with 'enter' position command is going to be incremented or decremented by 10.
+If you push W or S on the keyboard, position command will be incremented or decremented by 1. Created for more precise movement.
+Dashboard is also updated with movement direction info according to motor ID. Can only be viewed on fullscreen.
+
+For faster launch, you can write this to terminal:
 
 ```bash
-g++ -o main main.cpp -ltmotor
+tmotor4
 ```
-
-## Development
-
-Feel free to add more to this library and make contributions, we welcome any help in making the tedious lower-level interface crafting work easier, especially for new comers into the robotics community.
+Which will start all four terminals at once, and you don't need to input gear ratios and can interfaces or motor ID's by hand,
+it's all taken care of.
