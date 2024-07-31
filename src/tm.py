@@ -27,10 +27,10 @@ def main():
 
     # Define terminal commands, window names, keystrokes, and positions
     commands = [
-        ("tmotorui 29 vcan0", "Terminal 1", "b", 0, 0, quad_width, quad_height),
-        ("tmotorui 20 vcan0", "Terminal 2", "c", quad_width, 0, quad_width, quad_height),
-        ("tmotorui 10 vcan0", "Terminal 3", "d", 0, quad_height, quad_width, quad_height),
-        ("tmotorui 10 vcan0", "Terminal 4", "e", quad_width, quad_height, quad_width, quad_height)
+        ("tmotorui 29 can0", "Terminal 1", "b", 0, 0, quad_width, quad_height),
+        ("tmotorui 20 can0", "Terminal 2", "c", quad_width, 0, quad_width, quad_height),
+        ("tmotorui 10 can0", "Terminal 3", "d", 0, quad_height, quad_width, quad_height),
+        ("tmotorui 10 can0", "Terminal 4", "e", quad_width, quad_height, quad_width, quad_height)
     ]
 
     for command, window_name, keystroke, x, y, width, height in commands:
