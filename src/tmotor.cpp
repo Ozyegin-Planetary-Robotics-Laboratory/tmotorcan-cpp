@@ -37,9 +37,6 @@ std::string fault_to_string(MotorFault &fault) {
 void AKManager::__read_motor_message() {
   struct can_frame rframe;
   int nbytes = read(_can_fd, &rframe, sizeof(struct can_frame));
-  if (nbytes < 0) {
-    throw std::runtime_error("Error while reading from socket");
-  }
   if (nbytes < sizeof(struct can_frame)) {
     return;
   }
@@ -94,6 +91,7 @@ AKManager::AKManager(const AKManager& other) :
 
 AKManager::~AKManager() {
   _shutdown = true;
+  _can_reader.join();
   close(_can_fd);
 }
 
@@ -131,12 +129,20 @@ MotorFault AKManager::getFault() {
 }
 
 void AKManager::connect(const char *can_interface) {
-    /* create socket file descriptor */
-  while (_can_fd < 0) {
+  /* zero out all the states */
+  _shutdown = true;
+  if (_can_reader.joinable()) _can_reader.join();
+  _can_fd = -1;
+  
+  /* create socket file descriptor */
+  int f_tries(0);
+  while (_can_fd < 0 && f_tries++ < 5) {
     if ((_can_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-      throw std::runtime_error("Error while creating the socket.");
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+  }
+  if (_can_fd < 0) {
+    throw std::runtime_error("Unable to create the CAN socket.");
   }
 
   /* input the correct network interface name */
@@ -148,27 +154,37 @@ void AKManager::connect(const char *can_interface) {
   struct sockaddr_can addr;
   addr.can_family = AF_CAN;
   addr.can_ifindex = ifr.ifr_ifindex;
+  int b_tries(0);
   int bind = -1;
-  while (bind < 0) {
+  while (bind < 0 && b_tries++ < 5) {
     if ((bind = ::bind(_can_fd, (struct sockaddr *)&addr, sizeof(addr))) < 0) {
-      throw std::runtime_error("Error while binding the socket.");
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+  }
+  if (bind < 0) {
+    throw std::runtime_error("Unable to bind to the CAN socket.");
   }
 
   /* Filter for the CAN messages. */
   struct can_filter rfilter;
   rfilter.can_id = 0x00002900 | _motor_id;
   rfilter.can_mask = CAN_SFF_MASK;
-  setsockopt(_can_fd, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(struct can_filter));
+  int o_tries(0);
+  int opt = -1;
+  while ((opt = setsockopt(_can_fd, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(struct can_filter))) < 0 && o_tries++ < 5) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
+  if (opt < 0) {
+    throw std::runtime_error("Unable to set the CAN filter.");
+  }
 
+  _shutdown = false;
   _can_reader = std::thread([this] {
     while (!_shutdown) {
       __read_motor_message();
-      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
   });
-  _can_reader.detach();
 }
 
 void AKManager::setOrigin(MotorOriginMode mode) {

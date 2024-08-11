@@ -26,6 +26,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <atomic>
 
 #define TMOTOR_AK_POLE_PAIRS 21
 
@@ -71,7 +72,7 @@ std::string fault_to_string(MotorFault &fault);
 class AKManager {
 protected:
   int _can_fd;
-  bool _shutdown;
+  std::atomic<bool> _shutdown;
   uint8_t _motor_id;
   float _current;            // A   [-60, 60]
   float _velocity;           // rpm [-320000, 320000] 
