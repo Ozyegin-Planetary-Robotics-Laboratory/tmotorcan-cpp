@@ -61,6 +61,20 @@ enum MotorFault {
 
 std::string fault_to_string(MotorFault &fault);
 
+class CANSocketException : public std::exception {
+public:
+  CANSocketException(const char *msg) :
+    _msg(msg)
+  {}
+
+  const char *what() {
+    return _msg;
+  }
+  
+private:
+  const char *_msg;
+};
+
 /**
  * @brief AK Motors CAN Interface
  * This class is used to communicate with the AK60 & AK70 motors via CAN bus. Accepted IDs are uint8_t types.

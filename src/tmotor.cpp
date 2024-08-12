@@ -132,6 +132,7 @@ void AKManager::connect(const char *can_interface) {
   /* zero out all the states */
   _shutdown = true;
   if (_can_reader.joinable()) _can_reader.join();
+  if (_can_fd >= 0) close(_can_fd);
   _can_fd = -1;
   
   /* create socket file descriptor */
@@ -142,7 +143,7 @@ void AKManager::connect(const char *can_interface) {
     }
   }
   if (_can_fd < 0) {
-    throw std::runtime_error("Unable to create the CAN socket.");
+    throw CANSocketException("Unable to create the CAN socket.");
   }
 
   /* input the correct network interface name */
@@ -162,7 +163,7 @@ void AKManager::connect(const char *can_interface) {
     }
   }
   if (bind < 0) {
-    throw std::runtime_error("Unable to bind to the CAN socket.");
+    throw CANSocketException("Unable to bind to the CAN socket.");
   }
 
   /* Filter for the CAN messages. */
@@ -175,7 +176,7 @@ void AKManager::connect(const char *can_interface) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
   if (opt < 0) {
-    throw std::runtime_error("Unable to set the CAN filter.");
+    throw CANSocketException("Unable to set the CAN filter.");
   }
 
   _shutdown = false;
@@ -197,7 +198,7 @@ void AKManager::setOrigin(MotorOriginMode mode) {
   wframe.can_dlc = 1;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket");
+    throw CANSocketException("Error while writing to the socket");
   }
 }
 
@@ -215,7 +216,7 @@ void AKManager::sendDutyCycle(float duty) {
   wframe.can_dlc = 4;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket.");
+    throw CANSocketException("Error while writing to the socket.");
   }
 }
 
@@ -237,7 +238,7 @@ void AKManager::sendCurrent(float current) {
   wframe.can_dlc = 4;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket");
+    throw CANSocketException("Error while writing to the socket");
   }
 }
 
@@ -259,7 +260,7 @@ void AKManager::sendCurrentBrake(float current) {
   wframe.can_dlc = 4;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket");
+    throw CANSocketException("Error while writing to the socket");
   }
 }
 
@@ -277,7 +278,7 @@ void AKManager::sendVelocity(float vel) {
   wframe.can_dlc = 4;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket");
+    throw CANSocketException("Error while writing to the socket");
   }
 
 }
@@ -298,7 +299,7 @@ void AKManager::sendPosition(float pose) {
   wframe.can_dlc = 4;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket");
+    throw CANSocketException("Error while writing to the socket");
   }
 }
 
@@ -326,6 +327,6 @@ void AKManager::sendPositionVelocityAcceleration(float pose, int16_t vel, int16_
   wframe.can_dlc = 8;
   int nbytes = write(_can_fd, &wframe, sizeof(struct can_frame));
   if (nbytes < 0) {
-    throw std::runtime_error("Error while writing to the socket");
+    throw CANSocketException("Error while writing to the socket");
   }
 }
