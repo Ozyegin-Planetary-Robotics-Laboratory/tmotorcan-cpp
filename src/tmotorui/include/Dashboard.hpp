@@ -3,8 +3,8 @@
 
 #include <map>
 
-#include "tmotor.hpp"
-#include "Component.hpp"
+#include <tmotor.hpp>
+#include <Component.hpp>
 
 struct AKPacket : public UpdatePacket {
   float current;

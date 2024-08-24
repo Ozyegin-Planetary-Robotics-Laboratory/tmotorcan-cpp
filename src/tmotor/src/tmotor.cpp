@@ -54,7 +54,7 @@ void AKManager::__read_motor_message() {
 
 AKManager::AKManager() :
   _can_fd(-1),
-  _shutdown(false),
+  _shutdown(true),
   _motor_id(-1),
   _current(0.0f),
   _velocity(0.0f),
@@ -67,7 +67,7 @@ AKManager::AKManager() :
 
 AKManager::AKManager(const uint8_t motor_id) :
   _can_fd(-1),
-  _shutdown(false),
+  _shutdown(true),
   _motor_id(motor_id),
   _current(0.0f),
   _velocity(0.0f),
@@ -80,7 +80,7 @@ AKManager::AKManager(const uint8_t motor_id) :
 
 AKManager::AKManager(const AKManager& other) :
   _can_fd(-1),
-  _shutdown(false),
+  _shutdown(true),
   _motor_id(other._motor_id),
   _current(0.0f),
   _velocity(0.0f),
@@ -91,7 +91,9 @@ AKManager::AKManager(const AKManager& other) :
 
 AKManager::~AKManager() {
   _shutdown = true;
-  _can_reader.join();
+  if (_can_reader.joinable()) {
+    _can_reader.join();
+  }  
   close(_can_fd);
 }
 
@@ -129,10 +131,13 @@ MotorFault AKManager::getFault() {
 }
 
 void AKManager::connect(const char *can_interface) {
-  /* zero out all the states */
   _shutdown = true;
-  if (_can_reader.joinable()) _can_reader.join();
-  if (_can_fd >= 0) close(_can_fd);
+  if (_can_reader.joinable()) {
+    _can_reader.join();
+  }
+  if (_can_fd > -1) {
+    close(_can_fd);
+  }
   _can_fd = -1;
   
   /* create socket file descriptor */
@@ -183,7 +188,7 @@ void AKManager::connect(const char *can_interface) {
   _can_reader = std::thread([this] {
     while (!_shutdown) {
       __read_motor_message();
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   });
 }

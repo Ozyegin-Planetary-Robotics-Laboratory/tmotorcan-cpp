@@ -6,12 +6,12 @@
 #include <vector>
 #include <sstream>
 
-#include "../include/Component.hpp"
-#include "../include/Dashboard.hpp"
-#include "../include/Button.hpp"
-#include "../include/Input.hpp"
-#include "../include/Menu.hpp"
-#include "../include/tmotor.hpp"
+#include <Component.hpp>
+#include <Dashboard.hpp>
+#include <Button.hpp>
+#include <Input.hpp>
+#include <Menu.hpp>
+#include <tmotor.hpp>
 
 int main(int argc, char **argv) {
   float gear_ratio;
