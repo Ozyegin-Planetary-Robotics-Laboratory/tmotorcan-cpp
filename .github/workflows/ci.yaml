@@ -14,11 +14,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: mkdir build
-      run: mkdir build
-    - name: cd build
-      run: cd build
-    - name: cmake ..
-      run: cmake ..
-    - name: make all
-      run: make all
+    - name: Build Project
+      uses: threeal/cmake-action@v2.0.0
