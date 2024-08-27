@@ -18,6 +18,6 @@ jobs:
       uses: threeal/cmake-action@v2.0.0
       with:
         options: |
-          BUILD_TEST=on
+          BUILD_TESTS=on
     - name: Test Project
-      run:  ls
+      run: ctest -V --test-dir build/tests/
