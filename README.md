@@ -6,7 +6,7 @@ The project consists of two programs and a testing routine, if you're interestin
 
 ## Build & Installation
 
-The project uses CMake for building and installation, first, clone the repository into a local folder. Run the below commands while ensuring you are present within the repository folder, 
+The project uses CMake for building and installation, first, clone the repository into a local folder using `git clone`. Then run the below commands inside the repository.
 
 ```bash
 mkdir build && cd build
@@ -32,7 +32,7 @@ If you are using g++ or a Makefile, the correct flag is -ltmotor
 g++ -o main main.cpp -ltmotor
 ```
 
-or if you are using CMake simply add the below directive after the `add_executable()`,
+or if you are using CMake simply add the below directive after the `add_executable()` directive,
 
 ```cmake
 target_link_libraries(<target> PRIVATE tmotor)
@@ -40,15 +40,14 @@ target_link_libraries(<target> PRIVATE tmotor)
 
 ## Development
 
-Feel free to add more to this library and make contributions, we welcome any help in making the tedious lower-level interface crafting work easier, especially for new comers into the robotics community.
-
-In order to run the unit tests for using GTest, simply go into the `tests/` directory, and then go through similar build procedures as the initial project.
+Feel free to add issues and make more contributions to this project, we welcome any help. Though we might have CI pipeline, while working with the project, you might want to manually unit test the code. In order to run the unit tests, you need to build the project with the `BUILD_TEST` argument set. You may follow the below instructions.
 
 ```bash
-mkdir tests/build && cd tests/build
-cmake ..
+mkdir build && cd build
+cmake .. -DBUILD_TESTS=on
 make all
-make test
+cd tests
+ctest -V # verbose
 ```
 
 Copy paste the above script line by line, and you will have compiled the tests cases and ran them.
