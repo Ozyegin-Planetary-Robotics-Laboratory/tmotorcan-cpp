@@ -1,10 +1,10 @@
 #ifndef MENU_HPP
 #define MENU_HPP
 
-#include "tmotor.hpp"
-#include "Component.hpp"
-#include "Button.hpp"
-#include "Input.hpp"
+#include <tmotor.hpp>
+#include <Component.hpp>
+#include <Button.hpp>
+#include <Input.hpp>
 
 class Menu : public Component {
   std::shared_ptr<TMotor::AKManager> m_manager;

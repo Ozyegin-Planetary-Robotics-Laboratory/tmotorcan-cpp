@@ -2,7 +2,7 @@
 #define INPUT_HPP
 
 #include <sstream>
-#include "Component.hpp"
+#include <Component.hpp>
 
 struct InputUpdate : public UpdatePacket {
   int key_in;
