@@ -1,0 +1,24 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: mkdir build
+      run: mkdir build
+    - name: cd build
+      run: cd build
+    - name: cmake ..
+      run: cmake ..
+    - name: make all
+      run: make all
