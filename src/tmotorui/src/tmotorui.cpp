@@ -1,3 +1,4 @@
+#include <getopt.h>
 #include <signal.h>
 #include <ncurses.h>
 
@@ -5,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <iostream>
 
 #include <Component.hpp>
 #include <Dashboard.hpp>
@@ -16,17 +18,30 @@
 int main(int argc, char **argv) {
   float gear_ratio;
   std::string can_interface;
-  try
+
+  if (argc != 2)
   {
-    gear_ratio = std::stof(argv[1]);
-    can_interface = argv[2];
-    if (can_interface != "vcan0" && can_interface != "can0") throw std::runtime_error("Invalid CAN interface");
+    std::cout << "Usage: tmotorui <reduction> <can_interface>\n";
+    return 1;
   }
-  catch(const std::exception& e)
+
+  gear_ratio = std::stof(argv[1]);
+  if (gear_ratio < 0.0f)
   {
-    gear_ratio = 1.0f;
-    can_interface = "vcan0";
+    std::cout << "Invalid reduction value, must be a positive number.\n";
+    std::cout << "Usage: tmotorui <reduction> <can_interface>\n";
+    return 1;
   }
+
+  can_interface = argv[2];
+  int can_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+  if (can_fd < 0)
+  {
+    std::cout << "Invalid can interface value, must be a valid can interface.\n";
+    std::cout << "Usage: tmotorui <reduction> <can_interface>\n";
+    return 1;
+  }
+  close(can_fd);
 
   initscr();
   atexit((void (*)()) endwin);
