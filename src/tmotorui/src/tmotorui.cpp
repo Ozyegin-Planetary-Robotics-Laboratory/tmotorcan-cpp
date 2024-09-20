@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <ncurses.h>
+#include <net/if.h>
 
 #include <map>
 #include <string>
@@ -19,7 +20,7 @@ int main(int argc, char **argv) {
   float gear_ratio;
   std::string can_interface;
 
-  if (argc != 2)
+  if (argc != 3)
   {
     std::cout << "Usage: tmotorui <reduction> <can_interface>\n";
     return 1;
@@ -34,14 +35,13 @@ int main(int argc, char **argv) {
   }
 
   can_interface = argv[2];
-  int can_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-  if (can_fd < 0)
+  unsigned int can_idx = if_nametoindex(can_interface.c_str());
+  if (can_idx == 0)
   {
     std::cout << "Invalid can interface value, must be a valid can interface.\n";
     std::cout << "Usage: tmotorui <reduction> <can_interface>\n";
     return 1;
   }
-  close(can_fd);
 
   initscr();
   atexit((void (*)()) endwin);
