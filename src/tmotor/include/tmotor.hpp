@@ -67,8 +67,8 @@ public:
     _msg(msg)
   {}
 
-  const char *what() {
-    return _msg;
+  const char *what() const noexcept override { // Correct signature
+    return _msg; // Return the stored message
   }
   
 private:
